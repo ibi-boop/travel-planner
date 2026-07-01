@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>旅行プランナー</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f3ee;
+    --card: #ffffff;
+    --border: #e0dbd0;
+    --accent: #2c6e49;
+    --accent-light: #d8f0e3;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --tag-bg: #f0ede6;
+    --tag-active: #2c6e49;
+    --tag-active-text: #fff;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow);
+  }
+
+  .card h2 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.375rem;
+    color: var(--text);
+  }
+
+  input[type="text"], input[type="number"], input[type="date"], input[type="password"] {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--bg);
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+
+  .date-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .date-row span {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .tag-category { margin-bottom: 1.25rem; }
+  .tag-category:last-child { margin-bottom: 0; }
+
+  .tag-category-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.375rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--tag-bg);
+    font-size: 0.85rem;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+
+  .tag:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .tag.active,
+  .tag:has(input:checked) {
+    background: var(--tag-active);
+    border-color: var(--tag-active);
+    color: var(--tag-active-text);
+  }
+
+  .tag input[type="checkbox"] { display: none; }
+
+  .generate-btn {
+    width: 100%;
+    padding: 0.875rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    font-family: inherit;
+  }
+
+  .generate-btn:hover { opacity: 0.9; }
+  .generate-btn:active { transform: scale(0.99); }
+  .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  #output-section { display: none; }
+
+  #output-section.visible { display: block; }
+
+  .output-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .output-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 0;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  #output {
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: var(--text);
+    white-space: pre-wrap;
+    font-family: inherit;
+  }
+
+  #output h1, #output h2, #output h3 {
+    margin: 1.25rem 0 0.5rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--accent);
+    animation: blink 1s step-end infinite;
+    vertical-align: text-bottom;
+    margin-left: 1px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .error {
+    color: #c0392b;
+    font-size: 0.875rem;
+    padding: 0.75rem;
+    background: #fdf0ef;
+    border: 1px solid #f5c6c2;
+    border-radius: 8px;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .error.visible { display: block; }
+
+  .api-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.375rem;
+  }
+
+  .copy-btn {
+    padding: 0.375rem 0.75rem;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .plan-photo {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin: 0.75rem 0;
+    display: block;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>旅行プランナー</h1>
+  <p class="subtitle">目的地・予算・日程・こだわりを入力して、最適な旅行プランを生成します</p>
+
+  <!-- API Key -->
+  <div class="card">
+    <h2>設定</h2>
+    <div class="field">
+      <label for="apiKey">Claude API キー</label>
+      <input type="password" id="apiKey" placeholder="sk-or-..." autocomplete="off">
+      <p class="api-hint">openrouter.ai でサインアップ → Keys からAPIキーを無料取得。入力したキーはローカルストレージに保存されます</p>
+    </div>
+  </div>
+
+  <!-- Basic Info -->
+  <div class="card">
+    <h2>基本情報</h2>
+    <div class="field">
+      <label for="destination">目的地</label>
+      <input type="text" id="destination" placeholder="例: 京都、バリ島、パリ...">
+    </div>
+    <div class="field">
+      <label for="budget">予算（概算）</label>
+      <input type="text" id="budget" placeholder="例: 10万円、$2000、交通費込みで20万円以内...">
+    </div>
+    <div class="field">
+      <label>旅行期間</label>
+      <div class="date-row">
+        <input type="date" id="dateFrom">
+        <span>〜</span>
+        <input type="date" id="dateTo">
+      </div>
+    </div>
+    <div class="field">
+      <label for="travelers">人数・メンバー構成</label>
+      <input type="text" id="travelers" placeholder="例: 大人2人、家族4人（子供あり）、1人旅...">
+    </div>
+    <div class="field">
+      <label for="accommodation">宿泊場所</label>
+      <input type="text" id="accommodation" placeholder="例: 京都駅前のホテル、浅草のゲストハウス...">
+    </div>
+  </div>
+
+  <!-- Tags -->
+  <div class="card">
+    <h2>この旅で大事にしたいこと</h2>
+
+    <div class="tag-category">
+      <div class="tag-category-label">体験スタイル</div>
+      <div class="tags">
+        <label class="tag"><input type="checkbox" value="食文化を深める">🍜 食文化を深める</label>
+        <label class="tag"><input type="checkbox" value="自然・アウトドア">🏔 自然・アウトドア</label>
+        <label class="tag"><input type="checkbox" value="歴史・文化・寺社">🏯 歴史・文化</label>
+        <label class="tag"><input type="checkbox" value="アート・デザイン">🎨 アート・デザイン</label>
+        <label class="tag"><input type="checkbox" value="ショッピング">🛍 ショッピング</label>
+        <label class="tag"><input type="checkbox" value="温泉・スパ">♨️ 温泉・スパ</label>
+      </div>
+    </div>
+
+    <div class="tag-category">
+      <div class="tag-category-label">旅のペース・スタイル</div>
+      <div class="tags">
+        <label class="tag"><input type="checkbox" value="のんびりゆっくり">🌿 のんびり</label>
+        <label class="tag"><input type="checkbox" value="アクティブに動き回る">⚡ アクティブ</label>
+        <label class="tag"><input type="checkbox" value="効率よく主要スポット巡り">🗺 効率重視</label>
+        <label class="tag"><input type="checkbox" value="気ままな散策">🚶 気ままな散策</label>
+      </div>
+    </div>
+
+    <div class="tag-category">
+      <div class="tag-category-label">こだわり・優先事項</div>
+      <div class="tags">
+        <label class="tag"><input type="checkbox" value="地元感・ローカル体験">🏘 地元感・ローカル</label>
+        <label class="tag"><input type="checkbox" value="穴場スポット優先">🔍 穴場スポット</label>
+        <label class="tag"><input type="checkbox" value="写真映え・フォトジェニック">📷 フォトジェニック</label>
+        <label class="tag"><input type="checkbox" value="コスパ重視">💴 コスパ重視</label>
+        <label class="tag"><input type="checkbox" value="贅沢・プレミアム体験">✨ 贅沢・プレミアム</label>
+        <label class="tag"><input type="checkbox" value="子連れフレンドリー">👶 子連れOK</label>
+      </div>
+    </div>
+
+    <div class="tag-category">
+      <div class="tag-category-label">移動手段</div>
+      <div class="tags">
+        <label class="tag"><input type="checkbox" value="公共交通機関のみ">🚃 公共交通のみ</label>
+        <label class="tag"><input type="checkbox" value="レンタカー・自由移動">🚗 レンタカー</label>
+        <label class="tag"><input type="checkbox" value="マイカーで移動">🚙 マイカー</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Free text -->
+  <div class="card">
+    <h2>その他・要望（任意）</h2>
+    <div class="field">
+      <textarea id="freeText" rows="3" placeholder="アレルギー、苦手なもの、特別なリクエストなど..." style="width:100%;padding:0.625rem 0.75rem;border:1px solid var(--border);border-radius:8px;font-size:0.9rem;font-family:inherit;color:var(--text);background:var(--bg);resize:vertical;outline:none;transition:border-color 0.15s;"></textarea>
+    </div>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <button class="generate-btn" id="generateBtn" onclick="generate()">旅行プランを生成する</button>
+
+  <!-- Output -->
+  <div id="output-section" class="card" style="margin-top:1.25rem;">
+    <div class="output-header">
+      <h2>旅行プラン</h2>
+      <button class="copy-btn" onclick="copyOutput()">コピー</button>
+    </div>
+    <div id="output"></div>
+  </div>
+</div>
+
+<script>
+  const OR_MODEL = 'nvidia/nemotron-3-ultra-550b-a55b:free';
+
+  // Load saved API key
+  const savedKey = localStorage.getItem('openrouter_api_key');
+  if (savedKey) document.getElementById('apiKey').value = savedKey;
+
+  // Tag toggle
+  document.querySelectorAll('.tag input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.tag').classList.toggle('active', cb.checked);
+    });
+  });
+
+  // Set default dates
+  const today = new Date();
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+  document.getElementById('dateFrom').value = today.toISOString().slice(0, 10);
+  document.getElementById('dateTo').value = nextWeek.toISOString().slice(0, 10);
+
+  function getSelectedTags() {
+    return Array.from(document.querySelectorAll('.tag input[type="checkbox"]:checked'))
+      .map(cb => cb.value);
+  }
+
+  function buildPrompt() {
+    const destination = document.getElementById('destination').value.trim();
+    const budget = document.getElementById('budget').value.trim();
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    const travelers = document.getElementById('travelers').value.trim();
+    const tags = getSelectedTags();
+    const freeText = document.getElementById('freeText').value.trim();
+
+    const days = dateFrom && dateTo
+      ? Math.round((new Date(dateTo) - new Date(dateFrom)) / 86400000) + 1
+      : null;
+
+    let prompt = `旅行プランを作成してください。\n\n`;
+    prompt += `## 旅行条件\n`;
+    prompt += `- 目的地: ${destination || '未指定'}\n`;
+    prompt += `- 予算: ${budget || '未指定'}\n`;
+    if (dateFrom && dateTo) {
+      prompt += `- 期間: ${dateFrom} 〜 ${dateTo}（${days}日間）\n`;
+    }
+    if (travelers) prompt += `- メンバー: ${travelers}\n`;
+    const accommodation = document.getElementById('accommodation').value.trim();
+    if (accommodation) prompt += `- 宿泊場所: ${accommodation}（宿泊費は予算に含めない）\n`;
+    if (tags.length > 0) {
+      prompt += `\n## この旅で大事にしたいこと\n`;
+      tags.forEach(t => prompt += `- ${t}\n`);
+    }
+    if (freeText) {
+      prompt += `\n## その他の要望\n${freeText}\n`;
+    }
+
+    prompt += `
+## 出力形式
+以下の形式で、日程ごとに詳細なプランを作成してください：
+
+- 各日の見出し（例：Day 1 / 2024-12-01（日））
+- 午前・午後・夜のスケジュール
+- 各スポットの概要と所要時間
+- 移動手段と移動時間
+- おすすめのグルメ（昼食・夕食）
+- その日のポイント・注意事項
+
+【写真について】各日の最初と、主要スポットを紹介する際に、以下の形式で画像マーカーを挿入してください：
+[IMG:英語キーワード1,英語キーワード2]
+例：[IMG:kyoto,temple,morning] や [IMG:osaka,street food,dotonbori]
+キーワードは英語で、そのスポットや風景をよく表す単語を2〜3個カンマ区切りで指定してください。
+
+【予算について】宿泊費は除いた、食事・交通・入場料などの費用を予算内に収めてください。
+
+最後に、旅全体のヒント（予算内訳の目安※宿泊費除く、持ち物・準備、現地での注意点）を追加してください。
+
+旅行者のこだわりポイントを特に反映した、実践的で具体的なプランにしてください。`;
+
+    return prompt;
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error');
+    el.textContent = msg;
+    el.classList.add('visible');
+  }
+
+  function hideError() {
+    document.getElementById('error').classList.remove('visible');
+  }
+
+  function renderMarkdown(text) {
+    return text
+      .replace(/\[IMG:([^\]]+)\]/g, (_, keywords) => {
+        const encoded = encodeURIComponent(keywords.trim());
+        const sig = Math.abs(keywords.split('').reduce((a, c) => a + c.charCodeAt(0), 0));
+        return `<img class="plan-photo" src="https://source.unsplash.com/featured/800x400/?${encoded}&sig=${sig}" alt="${keywords}" loading="lazy">`;
+      })
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+  }
+
+  async function generate() {
+    hideError();
+
+    const apiKey = document.getElementById('apiKey').value.trim();
+    if (!apiKey) { showError('APIキーを入力してください'); return; }
+    if (!document.getElementById('destination').value.trim()) {
+      showError('目的地を入力してください');
+      return;
+    }
+
+    localStorage.setItem('openrouter_api_key', apiKey);
+
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.textContent = '生成中...';
+
+    const outputSection = document.getElementById('output-section');
+    const outputEl = document.getElementById('output');
+    outputSection.classList.add('visible');
+    outputEl.innerHTML = '<span class="cursor"></span>';
+    outputSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const prompt = buildPrompt();
+
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: OR_MODEL,
+          stream: true,
+          max_tokens: 8192,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `HTTPエラー: ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = '';
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (!data || data === '[DONE]') continue;
+
+          try {
+            const event = JSON.parse(data);
+            const text = event.choices?.[0]?.delta?.content;
+            if (text) {
+              accumulated += text;
+              outputEl.innerHTML = renderMarkdown(accumulated) + '<span class="cursor"></span>';
+            }
+          } catch (_) {}
+        }
+      }
+
+      outputEl.innerHTML = renderMarkdown(accumulated);
+
+    } catch (err) {
+      outputSection.classList.remove('visible');
+      showError('エラーが発生しました: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '旅行プランを生成する';
+    }
+  }
+
+  function copyOutput() {
+    const text = document.getElementById('output').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'コピー済み✓';
+      setTimeout(() => btn.textContent = 'コピー', 1500);
+    });
+  }
+</script>
+</body>
+</html>
