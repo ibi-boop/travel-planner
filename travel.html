@@ -285,6 +285,31 @@
     margin: 1rem 0 0.4rem;
   }
 
+  .plan-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.85rem;
+  }
+
+  .plan-table th {
+    background: var(--accent);
+    color: #fff;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+  }
+
+  .plan-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .plan-table tr:nth-child(even) td {
+    background: var(--bg);
+  }
+
   .plan-photo {
     width: 100%;
     max-height: 260px;
@@ -515,17 +540,36 @@
   }
 
   function renderMarkdown(text) {
-    return text
-      .replace(/\[IMG:([^\]]+)\]/g, (_, keywords) => {
-        const encoded = encodeURIComponent(keywords.trim().replace(/,/g, ' '));
-        const rand = Math.abs(keywords.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 100;
-        return `<img class="plan-photo" src="https://loremflickr.com/800/400/${encoded}?random=${rand}" alt="${keywords}" loading="lazy" onerror="this.style.display='none'">`;
-      })
+    // Images
+    text = text.replace(/\[IMG:([^\]]+)\]/g, (_, keywords) => {
+      const encoded = encodeURIComponent(keywords.trim().replace(/,/g, ' '));
+      const rand = Math.abs(keywords.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 100;
+      return `<img class="plan-photo" src="https://loremflickr.com/800/400/${encoded}?random=${rand}" alt="${keywords}" loading="lazy" onerror="this.style.display='none'">`;
+    });
+
+    // Tables
+    text = text.replace(/((?:^\|.+\|\n?)+)/gm, (block) => {
+      const rows = block.trim().split('\n').filter(r => r.trim());
+      let html = '<table class="plan-table">';
+      rows.forEach((row, i) => {
+        if (/^\|[-:\s|]+\|$/.test(row.trim())) return; // skip separator row
+        const cells = row.split('|').slice(1, -1).map(c => c.trim());
+        const tag = i === 0 ? 'th' : 'td';
+        html += '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+      });
+      html += '</table>';
+      return html;
+    });
+
+    // Headings
+    text = text
       .replace(/^### (.+)$/gm, '<h3>$1</h3>')
       .replace(/^## (.+)$/gm, '<h2>$1</h2>')
       .replace(/^# (.+)$/gm, '<h1>$1</h1>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    return text;
   }
 
   async function generate() {
